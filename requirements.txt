@@ -1,0 +1,13 @@
+# Requirements для проекта Practice_Diploma_Tracker
+# Ultralytics YOLO - детекция объектов
+ultralytics>=8.0.0
+opencv-python>=4.5.0
+opencv-python-headless>=4.5.0  # Альтернатива без GUI зависимостей
+numpy>=1.19.0
+torch>=1.9.0
+# Albumentations - аугментации изображений для компьютерного зрения
+albumentations>=1.3.0
+Pillow>=9.0.0
+PyYAML>=6.0
+matplotlib>=3.3.0
+# python>=3.8

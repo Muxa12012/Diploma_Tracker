@@ -1,0 +1,26 @@
+{
+  "total_images": 18,
+  "total_augmented": 54,
+  "skipped_images": 0,
+  "failed_images": 0,
+  "total_bboxes_before": 18,
+  "total_bboxes_after": 18,
+  "by_class_before": {
+    "1": 6,
+    "2": 4,
+    "3": 4,
+    "0": 4
+  },
+  "by_class_after": {
+    "1.0": 6,
+    "2.0": 4,
+    "3.0": 4,
+    "0.0": 4
+  },
+  "start_time": "2026-04-26T23:11:20.290245",
+  "end_time": "2026-04-26T23:11:20.532210",
+  "augmentation_types": {},
+  "duration_seconds": 0.241965,
+  "success_rate": 100.0,
+  "avg_augmentations_per_image": 3.0
+}

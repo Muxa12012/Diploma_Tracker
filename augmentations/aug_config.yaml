@@ -1,0 +1,124 @@
+# Конфигурация аугментации для YOLO датасета
+# Все параметры могут быть изменены в зависимости от задачи
+
+# Пути к данным
+dataset:
+  # Исходный датасет (YOLO формат)
+  source_dir: "datasets/camera_dataset"
+  # Папки внутри source_dir (по умолчанию YOLO структура)
+  image_subdir: "images/train"
+  label_subdir: "labels/train"
+  # Целевая директория для сохранения аугментированных данных
+  output_dir: "datasets/camera_dataset_augmented"
+  # Формат изображений (расширения)
+  image_extensions: [".jpg", ".jpeg", ".png"]
+  # Количество аугментаций на одно изображение
+  augmentations_per_image: 10
+
+# Параметры аугментаций
+augmentations:
+  # Геометрические преобразования
+  geometric:
+    # Вероятность применения каждого преобразования (0-1)
+    probability: 0.3
+    # Поворот в градусах
+    rotate:
+      limit: 15
+      border_mode: 0  # 0 = constant, 1 = replicate, 4 = reflect
+      value: 0        # цвет границы (черный)
+    # Сдвиг по горизонтали и вертикали (доля от размера)
+    shift_scale_rotate:
+      shift_limit: 0.1
+      scale_limit: 0.1
+      rotate_limit: 10
+    # Горизонтальное отражение
+    horizontal_flip: true
+    # Вертикальное отражение
+    vertical_flip: false
+    # Искажение перспективы
+    perspective:
+      scale: 0.1
+      keep_size: true
+    # Обрезка случайной части изображения
+    random_crop:
+      enabled: false
+      min_height: 0.7
+      min_width: 0.7
+
+  # Цветовые преобразования
+  color:
+    probability: 0.3
+    # Изменение яркости/контраста
+    random_brightness_contrast:
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+    # Изменение гаммы
+    gamma:
+      limit: (80, 120)  # в процентах
+    # Изменение оттенка/насыщенности
+    hue_saturation_value:
+      hue_shift_limit: 20
+      sat_shift_limit: 30
+      val_shift_limit: 20
+    # Размытие
+    blur:
+      blur_limit: 7
+    # Шум
+    gauss_noise:
+      var_limit: (10.0, 50.0)
+    # Случайные тени
+    random_shadow: false
+
+  # Шумовые аугментации
+  noise:
+    probability: 0.3
+    # Гауссов шум
+    gaussian_noise:
+      var_limit: (10.0, 50.0)
+    # Соль-перец
+    salt_and_pepper:
+      amount: [0.01, 0.1]
+    # Капельный шум
+    dropout:
+      max_holes: 8
+      max_height: 8
+      max_width: 8
+
+# Параметры обработки bounding boxes
+bbox_params:
+  # Формат YOLO: нормализованные координаты центра и размеров
+  format: "yolo"
+  # Минимальная площадь bounding box после аугментации (относительная)
+  min_area: 0.001
+  # Минимальная видимая область (доля bounding box, которая должна остаться в изображении)
+  min_visibility: 0.3
+  # Классы, которые должны быть проигнорированы (по class_id)
+  ignore_classes: []
+
+# Настройки вывода
+output:
+  # Сохранять ли оригинальные изображения вместе с аугментированными
+  keep_originals: true
+  # Формат имен аугментированных файлов
+  naming_template: "{original_name}_aug{index:03d}"
+  # Сохранять ли визуализацию для отладки
+  save_debug_visualization: false
+  debug_dir: "debug_visualization"
+  # Генерировать отчет
+  generate_report: true
+  report_file: "augmentation_report.json"
+
+# Настройки логирования
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: "augmentation.log"
+  console_output: true
+
+# Параметры производительности
+performance:
+  # Количество потоков для обработки
+  num_workers: 4
+  # Размер буфера для чтения файлов
+  buffer_size: 100
+  # Использовать ли кэширование изображений
+  cache_images: false
