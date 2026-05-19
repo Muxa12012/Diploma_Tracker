@@ -1,0 +1,6 @@
+names:
+- face2
+nc: 1
+test: target.txt
+train: train.txt
+val: valid.txt

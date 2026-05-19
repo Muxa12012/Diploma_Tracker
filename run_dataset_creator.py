@@ -163,6 +163,35 @@ def find_data_yaml(start_path="."):
     return None
 
 
+def find_all_data_yaml(start_path="."):
+    """
+    Ищет все файлы data.yaml в целевых папках датасетов.
+    Возвращает список путей к найденным файлам.
+    """
+    start_path = Path(start_path)
+    target_paths = [Path(p) for p in TARGET_DATASET_PATHS]
+    found = []
+    
+    for target_path in target_paths:
+        # Проверяем существование папки
+        if not target_path.exists():
+            continue
+        # Ищем data.yaml в этой папке (не рекурсивно, только на верхнем уровне)
+        yaml_file = target_path / "data.yaml"
+        if yaml_file.exists() and yaml_file not in found:
+            found.append(yaml_file)
+        # Также можно проверить рекурсивно внутри папки, если требуется
+        for root, dirs, files in os.walk(target_path):
+            if "data.yaml" in files:
+                path = Path(root) / "data.yaml"
+                if path not in found:
+                    found.append(path)
+    
+    if not found:
+        print(color_text(f"Файлы data.yaml не найдены в целевых папках: {TARGET_DATASET_PATHS}", "YELLOW"))
+    return found
+
+
 def load_data_yaml(yaml_path):
     """
     Загружает data.yaml и возвращает словарь с данными.
@@ -575,26 +604,21 @@ def show_class_statistics():
     print(color_text("=" * 60, "HEADER"))
     print()
     
-    # 1. Найти data.yaml
-    yaml_path = find_data_yaml()
-    if yaml_path is None:
-        print(color_text("Ошибка: файл data.yaml не найден в проекте.", "RED"))
+    # 1. Найти все data.yaml
+    yaml_paths = find_all_data_yaml()
+    if not yaml_paths:
+        print(color_text("Ошибка: файлы data.yaml не найдены в целевых датасетах.", "RED"))
         print(color_text("Убедитесь, что вы находитесь в директории с датасетом YOLO.", "YELLOW"))
         input(color_text("\nНажмите Enter чтобы вернуться в меню...", "CYAN"))
         return
-
-    print(color_text(f"Найден файл конфигурации: {yaml_path}", "GREEN"))
     
-    # Определяем, с каким датасетом работаем
-    dataset_name = "неизвестный датасет"
-    for target_path in TARGET_DATASET_PATHS:
-        if str(yaml_path).startswith(target_path):
-            dataset_name = target_path
-            break
-    print(color_text(f"Работаем с датасетом: {dataset_name}", "CYAN"))
-    print(color_text(f"Операции ограничены целевыми папками: {TARGET_DATASET_PATHS}", "CYAN"))
+    print(color_text(f"Найдено файлов конфигурации: {len(yaml_paths)}", "GREEN"))
+    for i, path in enumerate(yaml_paths):
+        print(f"  {i+1}. {path}")
     
-    # 2. Загрузить данные
+    # 2. Загрузить данные из первого файла (предполагаем одинаковую структуру)
+    yaml_path = yaml_paths[0]
+    print(color_text(f"\nИспользуем для загрузки классов: {yaml_path}", "CYAN"))
     data = load_data_yaml(yaml_path)
     if data is None:
         input(color_text("\nНажмите Enter чтобы вернуться в меню...", "CYAN"))
@@ -797,14 +821,7 @@ def rename_class():
             return
         files_to_rename = found_files
     
-    # 9. Создание резервной копии data.yaml
-    import shutil
-    backup_path = yaml_path.with_suffix('.yaml.backup_rename')
-    try:
-        shutil.copy2(yaml_path, backup_path)
-        print(color_text(f"Создан backup: {backup_path}", "CYAN"))
-    except Exception as e:
-        print(color_text(f"Не удалось создать backup: {e}", "YELLOW"))
+    # 9. Создание резервной копии data.yaml (удалено, так как save_data_yaml создает backup автоматически)
     
     # 10. Переименование файлов
     renamed_count = 0
@@ -837,16 +854,28 @@ def rename_class():
             print(color_text(f"Ошибка переименования {file_path}: {e}", "RED"))
             rename_errors.append(f"{file_path}: {e}")
     
-    # 11. Обновление data.yaml
-    print(color_text("\nОбновление data.yaml...", "BLUE"))
+    # 11. Обновление всех data.yaml
+    print(color_text("\nОбновление всех data.yaml...", "BLUE"))
     classes[class_idx] = new_name
     data['names'] = classes
     # nc не меняется
     
-    if save_data_yaml(yaml_path, data):
-        print(color_text(f"Класс '{old_name}' успешно переименован в '{new_name}' в конфигурации.", "GREEN"))
+    # Сохраняем первый путь для обратной совместимости
+    primary_yaml_path = yaml_path
+    success_count = 0
+    for path in yaml_paths:
+        if save_data_yaml(path, data):
+            success_count += 1
+            print(color_text(f"  Обновлён: {path}", "GREEN"))
+        else:
+            print(color_text(f"  Ошибка обновления: {path}", "RED"))
+    
+    if success_count == len(yaml_paths):
+        print(color_text(f"\nКласс '{old_name}' успешно переименован в '{new_name}' во всех конфигурациях.", "GREEN"))
+    elif success_count > 0:
+        print(color_text(f"\nКласс '{old_name}' переименован в {success_count} из {len(yaml_paths)} конфигураций.", "YELLOW"))
     else:
-        print(color_text("Ошибка обновления data.yaml.", "RED"))
+        print(color_text("\nОшибка обновления всех data.yaml.", "RED"))
     
     # 12. Итоги
     print(color_text("\nИТОГИ ПЕРЕИМЕНОВАНИЯ:", "BOLD"))
@@ -868,17 +897,21 @@ def delete_class():
     print(color_text("=" * 60, "HEADER"))
     print()
     
-    # 1. Найти data.yaml
-    yaml_path = find_data_yaml()
-    if yaml_path is None:
-        print(color_text("Ошибка: файл data.yaml не найден в проекте.", "RED"))
+    # 1. Найти все data.yaml
+    yaml_paths = find_all_data_yaml()
+    if not yaml_paths:
+        print(color_text("Ошибка: файлы data.yaml не найдены в целевых датасетах.", "RED"))
         print(color_text("Убедитесь, что вы находитесь в директории с датасетом YOLO.", "YELLOW"))
         input(color_text("\nНажмите Enter чтобы вернуться в меню...", "CYAN"))
         return
     
-    print(color_text(f"Найден файл конфигурации: {yaml_path}", "GREEN"))
+    print(color_text(f"Найдено файлов конфигурации: {len(yaml_paths)}", "GREEN"))
+    for i, path in enumerate(yaml_paths):
+        print(f"  {i+1}. {path}")
     
-    # 2. Загрузить данные
+    # 2. Загрузить данные из первого файла (предполагаем одинаковую структуру)
+    yaml_path = yaml_paths[0]
+    print(color_text(f"\nИспользуем для загрузки классов: {yaml_path}", "CYAN"))
     data = load_data_yaml(yaml_path)
     if data is None:
         input(color_text("\nНажмите Enter чтобы вернуться в меню...", "CYAN"))
@@ -993,18 +1026,30 @@ def delete_class():
         print(color_text("Файлы для удаления отсутствуют.", "CYAN"))
         errors = []
     
-    # 8. Обновление data.yaml
-    print(color_text("\nОбновление data.yaml...", "BLUE"))
+    # 8. Обновление всех data.yaml
+    print(color_text("\nОбновление всех data.yaml...", "BLUE"))
     # Удаляем класс из списка
     new_classes = [cls for idx, cls in enumerate(classes) if idx != class_idx]
     data['names'] = new_classes
     data['nc'] = len(new_classes)
     
-    if save_data_yaml(yaml_path, data):
-        print(color_text(f"Класс '{class_name}' успешно удалён из конфигурации.", "GREEN"))
+    # Сохраняем первый путь для лога
+    primary_yaml_path = yaml_path
+    success_count = 0
+    for path in yaml_paths:
+        if save_data_yaml(path, data):
+            success_count += 1
+            print(color_text(f"  Обновлён: {path}", "GREEN"))
+        else:
+            print(color_text(f"  Ошибка обновления: {path}", "RED"))
+    
+    if success_count == len(yaml_paths):
+        print(color_text(f"\nКласс '{class_name}' успешно удалён из всех конфигураций.", "GREEN"))
         print(color_text(f"Обновлено количество классов: nc = {data['nc']}", "CYAN"))
+    elif success_count > 0:
+        print(color_text(f"\nКласс '{class_name}' удалён из {success_count} из {len(yaml_paths)} конфигураций.", "YELLOW"))
     else:
-        print(color_text("Ошибка обновления data.yaml.", "RED"))
+        print(color_text("\nОшибка обновления всех data.yaml.", "RED"))
     
     # 9. Коррекция меток в аннотациях
     print(color_text("\n" + "=" * 60, "HEADER"))
@@ -1057,7 +1102,7 @@ def delete_class():
     # 10. Создание лога удаления
     if files_to_delete or True:  # Всегда создаем лог, даже если файлов нет
         log_file = log_deletion(class_name, files_to_delete, deleted_count if files_to_delete else 0,
-                                errors if files_to_delete else [], yaml_path, new_classes)
+                                errors if files_to_delete else [], primary_yaml_path, new_classes)
         print(color_text(f"Детальный лог сохранён в файл: {log_file}", "CYAN"))
     
     input(color_text("\nНажмите Enter чтобы вернуться в меню...", "CYAN"))

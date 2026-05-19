@@ -5,6 +5,15 @@ import yaml
 import time
 import re
 import sys
+import locale
+import io
+
+# Настройка кодировки вывода для поддержки кириллицы в Windows
+if sys.platform.startswith('win'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    # Установка локали для корректного отображения
+    locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 
 # ANSI цвета для терминала
 COLOR_RESET = "\033[0m"

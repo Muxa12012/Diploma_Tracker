@@ -64,6 +64,36 @@ class FileManager:
             os.makedirs(self.output_cfg.debug_dir, exist_ok=True)
         
         logger.debug(f"Созданы директории: {self.output_images_dir}, {self.output_labels_dir}")
+        
+        # Копирование data.yaml из исходного датасета, если он существует
+        self._copy_data_yaml()
+    
+    def _copy_data_yaml(self):
+        """
+        Копирует файл data.yaml из исходного датасета в выходную директорию.
+        Если файл уже существует в выходной директории, создается резервная копия.
+        """
+        source_yaml = os.path.join(self.dataset_cfg.source_dir, "data.yaml")
+        dest_yaml = os.path.join(self.dataset_cfg.output_dir, "data.yaml")
+        
+        if not os.path.exists(source_yaml):
+            logger.warning(f"Файл data.yaml не найден в исходном датасете: {source_yaml}")
+            return
+        
+        # Если целевой файл уже существует, создаем резервную копию
+        if os.path.exists(dest_yaml):
+            backup_path = dest_yaml + ".backup"
+            try:
+                shutil.copy2(dest_yaml, backup_path)
+                logger.debug(f"Создана резервная копия data.yaml: {backup_path}")
+            except Exception as e:
+                logger.warning(f"Не удалось создать резервную копию {dest_yaml}: {e}")
+        
+        try:
+            shutil.copy2(source_yaml, dest_yaml)
+            logger.info(f"Скопирован data.yaml из {source_yaml} в {dest_yaml}")
+        except Exception as e:
+            logger.error(f"Ошибка копирования data.yaml: {e}")
     
     def get_image_paths(self) -> List[str]:
         """

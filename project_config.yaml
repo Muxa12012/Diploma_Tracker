@@ -1,0 +1,161 @@
+# Конфигурация проекта Practice_Diploma_Tracker
+# Этот файл содержит настройки путей и параметров для всех компонентов проекта
+
+# Пути к датасетам
+datasets:
+  # Основные датасеты для операций удаления/переименования классов
+  target_paths:
+    - "datasets/camera_dataset"
+    - "datasets/camera_dataset_augmented"
+  
+  # Существующие датасеты в проекте
+  existing:
+    - name: "Face Detection v25i"
+      path: "datasets/Face_Detection_v25i_yolo26"
+      type: "yolo"
+      description: "Датасет для детекции лиц"
+    
+    - name: "Face Detection v25i (v2)"
+      path: "datasets/Face_Detection_v25i_yolo262"
+      type: "yolo"
+      description: "Улучшенный датасет для детекции лиц"
+    
+    - name: "Pet Detection"
+      path: "datasets/Pet Detection.v4i.yolo26"
+      type: "yolo"
+      description: "Датасет для детекции домашних животных"
+
+# Пути к моделям
+models:
+  # Предобученные модели
+  pretrained:
+    yolo26n: "yolo26n.pt"
+    yolov8n: "yolov8n.pt"
+  
+  # Обученные модели
+  trained:
+    best_face_detection: "best_one_yet/weights/best.pt"
+    last_face_detection: "best_one_yet/weights/last.pt"
+    runs_best: "runs/detect/face_detection_yolo26/weights/best.pt"
+    runs_last: "runs/detect/face_detection_yolo26/weights/last.pt"
+
+# Настройки обучения
+training:
+  # Основные параметры
+  default_epochs: 50
+  default_imgsz: 640
+  default_batch: 16
+  default_name: "face_detection_yolo26"
+  
+  # Пути к конфигурационным файлам
+  data_yaml:
+    pet_detection: "datasets/Pet Detection.v4i.yolo26/data.yaml"
+    face_detection: "datasets/Face_Detection_v25i_yolo26/data.yaml"
+    face_detection_v2: "datasets/Face_Detection_v25i_yolo262/data.yaml"
+
+# Настройки детекции
+detection:
+  # Камера
+  camera_index: 0
+  show_fps: true
+  confidence_threshold: 0.5
+  
+  # Модели для детекции
+  model_paths:
+    - name: "Лучшая модель"
+      path: "best_one_yet/weights/best.pt"
+      description: "Лучшая модель после обучения"
+    
+    - name: "Предобученная YOLO26"
+      path: "yolo26n.pt"
+      description: "Предобученная модель YOLO26"
+
+# Настройки создания датасетов
+dataset_creation:
+  # Скрипты создания датасетов
+  scripts:
+    - name: "С камеры (базовый)"
+      path: "create_dataset_from_camera.py"
+      description: "Создание датасета с камеры без YOLO формата"
+    
+    - name: "С камеры (YOLO)"
+      path: "create_dataset_from_camera_yolo.py"
+      description: "Создание датасета YOLO с камеры"
+    
+    - name: "Из изображений"
+      path: "create_dataset_from_images_yolo.py"
+      description: "Создание датасета YOLO из существующих изображений"
+    
+    - name: "Из видео"
+      path: "create_dataset_from_video_yolo.py"
+      description: "Создание датасета YOLO из видеофайла"
+
+# Настройки аугментации
+augmentation:
+  config_path: "augmentations/aug_config.yaml"
+  scripts:
+    - "augmentations/run_augmentation.py"
+    - "augmentations/main.py"
+  
+  # Целевые датасеты для аугментации
+  target_datasets:
+    - "datasets/camera_dataset"
+    - "datasets/camera_dataset_augmented"
+
+# Настройки логирования
+logging:
+  # Папки для логов
+  log_dirs:
+    - "logs/"
+    - "augmentation.log"
+  
+  # Уровень логирования
+  level: "INFO"
+  
+  # Формат логов
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Информация о проекте
+project_info:
+  name: "Practice_Diploma_Tracker"
+  version: "1.0.0"
+  description: "Проект компьютерного зрения с использованием YOLO для дипломной работы"
+  author: "Студент"
+  created: "2024"
+  
+  # Основные компоненты
+  components:
+    - name: "Главное меню"
+      file: "run_project.py"
+      description: "Универсальный интерфейс для управления проектом"
+    
+    - name: "Создание датасетов"
+      file: "run_dataset_creator.py"
+      description: "Меню для создания датасетов из различных источников"
+    
+    - name: "Обучение моделей"
+      file: "train_yolo.py"
+      description: "Обучение моделей YOLO"
+    
+    - name: "Детекция"
+      file: "detect_from_camera.py"
+      description: "Детекция объектов в реальном времени"
+    
+    - name: "Аугментация"
+      folder: "augmentations/"
+      description: "Система аугментации изображений и меток"
+
+# Рекомендации по использованию
+recommendations:
+  workflow:
+    - "1. Проверьте зависимости (опция 6 в главном меню)"
+    - "2. Создайте или подготовьте датасет (опция 1)"
+    - "3. При необходимости выполните аугментацию (опция 4)"
+    - "4. Обучите модель (опция 2)"
+    - "5. Протестируйте модель (опция 3)"
+  
+  tips:
+    - "Для первого запуска создайте небольшой тестовый датасет"
+    - "Используйте аугментацию для улучшения качества обучения"
+    - "Проверяйте логи в папке 'logs/' при возникновении ошибок"
+    - "Обновляйте пути в этом конфигурационном файле при изменении структуры проекта"

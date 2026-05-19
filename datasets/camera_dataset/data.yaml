@@ -1,0 +1,8 @@
+names:
+- face2
+- phone
+- umicat
+nc: 3
+test: target.txt
+train: train.txt
+val: valid.txt
